@@ -1,0 +1,74 @@
+html {
+    min-width: 600px;
+    min-height: 600px;
+}
+
+body {
+    font-family: system-ui, sans-serif;
+    font-size: 75%;
+}
+
+.jwtTrackerLogo {
+    width: 32px;
+    vertical-align: middle;
+    padding-right: 10px;
+}
+
+#go-to-options {
+    position: absolute;
+    top: 5px;
+    right: 20px;
+    font-size: 2rem;
+    cursor: pointer;
+
+    &:hover {
+        color: rgb(64, 0, 255);
+    }
+}
+
+.tokensmaincontent {
+    display: flex;
+    flex-direction: column;
+    row-gap: 4px;
+}
+
+.subtitle {
+    font-size: 0.875rem;
+    font-weight: bold;
+}
+
+#tokenexpired {
+    color: red;
+}
+
+json-viewer {
+    padding: 0 1rem 0 1rem;
+    border: #4ba7ef solid 1px;
+    border-radius: 4px;
+    margin: 5px 0 5px 0;
+    /* Background, font and indentation */
+    --background-color: #ffffff;
+    --color: #f8f8f2;
+    --font-family: monaco, Consolas, 'Lucida Console', monospace;
+    --font-size: 0.75rem;
+    --indent-size: 1.5em;
+    --indentguide-size: 1px;
+    --indentguide-style: solid;
+    --indentguide-color: #333;
+    --indentguide-color-active: #666;
+    --indentguide: var(--indentguide-size) var(--indentguide-style) var(--indentguide-color);
+    --indentguide-active: var(--indentguide-size) var(--indentguide-style) var(--indentguide-color-active);
+
+    /* Types colors */
+    --string-color: #024900;
+    --number-color: #693402;
+    --boolean-color: #4ba7ef;
+    --null-color: #9a02c8;
+    --property-color: #006593;
+
+    /* Collapsed node preview */
+    --preview-color: rgba(250, 158, 97, 0.9);
+
+    /* Search highlight color */
+    --highlight-color: #c6edff;
+}

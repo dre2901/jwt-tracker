@@ -1,0 +1,44 @@
+{
+    "manifest_version": 3,
+    "name": "JWT Tracker Extension",
+    "description": "Extension to track and show JWT",
+    "version": "1.0",
+    "author": "dre2901@gmail.com",
+    "homepage_url": "https://github.com/dre2901/jwt-tracker",
+    "options_page": "options/options.html",
+    "options_ui": {
+        "page": "options/options.html",
+        "open_in_tab": false
+    },
+    "background": {
+        "service_worker": "service-worker.js"
+    },
+    "incognito": "split",
+    "icons": {
+        "16": "icons/16.png",
+        "32": "icons/32.png",
+        "48": "icons/48.png",
+        "128": "icons/128.png"
+    },
+    "action": {
+        "default_icon": {
+            "16": "icons/16.png",
+            "32": "icons/32.png",
+            "48": "icons/48.png"
+        },
+        "default_title": "Show JWT",
+        "default_popup": "popup/popup.html"
+    },
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self';"
+    },
+    "permissions": [
+        "storage",
+        "webRequest",
+        "tabs",
+        "activeTab"
+    ],
+    "host_permissions": [
+        "*://*:*/*"
+    ]
+}

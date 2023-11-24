@@ -1,0 +1,47 @@
+<!-- popup.html -->
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" type="text/css" href="hint.min.css">
+    <link rel="stylesheet" type="text/css" href="popup.css">
+    <script src="json-viewer.bundle.js"></script>
+</head>
+
+<body>
+    <h1><img src="32.png" class="jwtTrackerLogo" />JWT Tracker</h1>
+    <div id="go-to-options" class="hint--left" aria-label="Click to go to the options screen">&#9881;</div>
+    <h3 id="notokens">No available JWT information found!</h3>
+    <div id="tokensmain">
+        <div class="tokensmaincontent">
+            <div class="subtitle">Last requests (grouped by initiator)</div>
+            <select id="availableTokens">
+                <!-- Options will be added here dynamically -->
+            </select>
+            <div id="tokennotexpired" class="subtitle">Token is expiring in <span id="expseconds"></span></div>
+            <div id="tokenexpired" class="subtitle">Token has already expired</span></div>
+            <div class="subtitle">Payload</div>
+            <div id="payloadControlPanel">
+                <button id="btnExpandAll" class="hint--right" aria-label="Expand all">&#9662;</button>
+                <button id="btnCollapseAll" class="hint--right" aria-label="Collapse all">&#9656;</button>
+                <span class="hint--right" aria-label="Use regex to filter particular elements in path (not for values)">
+                    <input id="filterPayload" type="text" placeholder="Filter path" />
+                </span>
+                <span class="hint--bottom" aria-label="Search for values in the payload (for example, '.com')">
+                    <input id="searchPayload" type="text" placeholder="Search value" />
+                </span>
+                <button id="btnCopyDecoded" class="hint--bottom" aria-label="Copy decoded token to the clipboard">Copy
+                    decoded</button>
+                <button id="btnCopyEncoded" class="hint--left" aria-label="Copy encoded token to the clipboard">Copy
+                    encoded</button>
+            </div>
+            <json-viewer id="jwtPayload"></json-viewer>
+            <div class="subtitle">Header</div>
+            <json-viewer id="jwtHeader"></json-viewer>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>
