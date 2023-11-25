@@ -5,18 +5,19 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
         if (details.requestHeaders) {
             const authHeader = details.requestHeaders.find(h =>
                 (h.name.toLowerCase() === 'authorization') && h.value.toLowerCase().startsWith('bearer'));
-            if (authHeader) {
-                // console.log(`authorization header found for initiator ${details.initiator} on tab ${details.tabId} has been detected: ${authHeader.value}`);
-                chrome.storage.local.get(['reqDb'], ({ reqDb }) => {
-                    const newReqDb = reqDb ? reqDb : {};
-                    if (!newReqDb[details.tabId]) {
-                        newReqDb[details.tabId] = { authJwt: [] };
-                    }
+
+            // console.log(`authorization header found for initiator ${details.initiator} on tab ${details.tabId} has been detected: ${authHeader.value}`);
+            chrome.storage.local.get(['reqDb'], ({ reqDb }) => {
+                const newReqDb = reqDb ? reqDb : {};
+                if (!newReqDb[details.tabId]) {
+                    newReqDb[details.tabId] = { authJwt: [] };
+                }
+                if (authHeader) {
                     // Delete requests in Db with the same initiator
                     newReqDb[details.tabId].authJwt = newReqDb[details.tabId].authJwt.filter(a => a.initiator !== details.initiator);
                     // Delete requests from Db is we have more than allowed in options
-                    if (newReqDb[details.tabId].authJwt.length > _maxHistoryEntries) {
-                        newReqDb[details.tabId].authJwt.splice(0, newReqDb[details.tabId].authJwt.length - _maxHistoryEntries - 1);
+                    if (newReqDb[details.tabId].authJwt.length > (_maxHistoryEntries - 1)) {
+                        newReqDb[details.tabId].authJwt.splice(0, newReqDb[details.tabId].authJwt.length - (_maxHistoryEntries - 1));
                     }
 
                     // Add new request to the end of array and set new reqDb
@@ -27,14 +28,16 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
                             //
                         }
                     );
+                }
 
-                    const reqNum = newReqDb[details.tabId].authJwt.length;
+                const reqNum = newReqDb[details.tabId].authJwt.length;
+                if (details.tabId > 0) {
                     chrome.action.setBadgeText({
                         tabId: details.tabId,
                         text: `${reqNum > 0 ? reqNum : ''}`
                     });
-                });
-            }
+                }
+            });
         }
     },
     { urls: ['*://*:*/*'] },
