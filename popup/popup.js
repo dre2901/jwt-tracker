@@ -43,24 +43,54 @@ const copyToClipboard = async (text) => {
     }
 }
 
-let currentSearch = null;
-const initPopupSelection = (req) => {
-    const authHeader = req.requestHeaders.find(h =>
-        (h.name.toLowerCase() === 'authorization') && h.value.toLowerCase().startsWith('bearer'));
-
-    if (!authHeader) {
-        console.error('Request does not contain authorization header', req);
-        return;
+const xmlToJson = (xml) => {
+    // Check if the input is an element
+    if (xml.nodeType === 1) {
+        var obj = {};
+        if (xml.attributes.length > 0) {
+            obj["@attributes"] = {};
+            for (var j = 0; j < xml.attributes.length; j++) {
+                var attribute = xml.attributes.item(j);
+                obj["@attributes"][attribute.nodeName] = attribute.nodeValue;
+            }
+        }
+        if (xml.hasChildNodes()) {
+            for (var i = 0; i < xml.childNodes.length; i++) {
+                var item = xml.childNodes.item(i);
+                var nodeName = item.nodeName;
+                if (typeof (obj[nodeName]) === "undefined") {
+                    obj[nodeName] = xmlToJson(item);
+                } else {
+                    if (typeof (obj[nodeName].push) === "undefined") {
+                        var old = obj[nodeName];
+                        obj[nodeName] = [];
+                        obj[nodeName].push(old);
+                    }
+                    obj[nodeName].push(xmlToJson(item));
+                }
+            }
+        }
+        return obj;
+    } else if (xml.nodeType === 3) { // text
+        return xml.nodeValue;
     }
+    return null;
+}
 
-    const jwtEncoded = authHeader.value.substring(7);
+let currentSearch = null;
+const initPopupSelectionJwt = (req) => {
+    const jwtEncoded = req.jwt;
     const jwtDecoded = decodeJwt(jwtEncoded);
 
     const expirationTimeInSeconds = jwtDecoded.payload.exp;
     const currentTimeInSeconds = Math.floor(Date.now() / 1000);
     const remainingTimeInSeconds = expirationTimeInSeconds - currentTimeInSeconds;
     if (remainingTimeInSeconds > 0) {
-        document.getElementById('expseconds').textContent = `${remainingTimeInSeconds}s`;
+        const hours = Math.floor(remainingTimeInSeconds / 3600);
+        const minutes = Math.floor((remainingTimeInSeconds % 3600) / 60);
+        const seconds = remainingTimeInSeconds % 60;
+
+        document.getElementById('expseconds').textContent = `${hours ? hours + 'h ' : ''}${minutes ? minutes + 'm ' : ''}${seconds ? seconds + 's' : ''}`;
         document.getElementById('tokennotexpired').style.display = 'block';
         document.getElementById('tokenexpired').style.display = 'none';
     } else {
@@ -134,11 +164,88 @@ const initPopupSelection = (req) => {
         event.preventDefault();
         copyToClipboard(jwtEncoded);
     });
+};
 
+let currentSamlSearch = null;
+const initPopupSelectionSaml = (req) => {
+    const samlEncoded = req.saml;
+    const samlDecoded = atob(samlEncoded);
+
+    const samlXml = (new DOMParser()).parseFromString(samlDecoded, 'text/xml');
+    const samlJson = xmlToJson(samlXml.documentElement);
+
+    const samlPayloadViewer = document.getElementById('samlPayload');
+
+    samlPayloadViewer.data = samlJson;
+
+    samlPayloadViewer.expandAll();
+
+    const filterPayload = document.getElementById('filterSamlPayload');
+    filterPayload.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter') {
+            if (!filterPayload.value) {
+                samlPayloadViewer.resetFilter();
+            } else {
+                samlPayloadViewer.filter(new RegExp(filterPayload.value));
+            }
+        }
+    })
+
+    const searchPayload = document.getElementById('searchSamlPayload');
+    searchPayload.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter') {
+            if (currentSamlSearch) {
+                const res = currentSamlSearch.next();
+                if (res.done) {
+                    alert('Done!');
+                }
+            } else {
+                currentSamlSearch = samlPayloadViewer.search(searchPayload.value);
+                const res = currentSamlSearch.next();
+                if (res.done) {
+                    alert('Nothing found!');
+                }
+            }
+        } else {
+            currentSamlSearch = null;
+        }
+    })
+
+    document.getElementById('btnSamlExpandAll').addEventListener('click', (event) => {
+        event.preventDefault();
+        samlPayloadViewer.expandAll();
+    });
+
+    document.getElementById('btnSamlCollapseAll').addEventListener('click', (event) => {
+        event.preventDefault();
+        samlPayloadViewer.collapseAll();
+    });
+
+    document.getElementById('btnCopySaml').addEventListener('click', (event) => {
+        event.preventDefault();
+        copyToClipboard(samlDecoded);
+    });
 }
 
-const initPopup = (authJwt) => {
-    if (authJwt.length === 0) {
+const initPopupSelection = (req) => {
+    if (!req.jwt && !req.saml) {
+        console.error('Request does not contain authorization information', req);
+        return;
+    }
+
+    if (req.jwt) {
+        document.getElementById('jwtcontent').style.display = 'block';
+        document.getElementById('samlcontent').style.display = 'none';
+        initPopupSelectionJwt(req);
+    } else if (req.saml) {
+        document.getElementById('jwtcontent').style.display = 'none';
+        document.getElementById('samlcontent').style.display = 'block';
+        initPopupSelectionSaml(req);
+    }
+}
+
+const initPopup = (auth) => {
+    if (auth.length === 0) {
         document.getElementById('notokens').style.display = 'block';
         document.getElementById('tokensmain').style.display = 'none';
         return;
@@ -149,18 +256,19 @@ const initPopup = (authJwt) => {
 
     const selectElement = document.getElementById('availableTokens');
 
-    authJwt.reverse().forEach((r, index) => {
+    auth.reverse().forEach((r, index) => {
         const option = document.createElement('option');
         option.value = index;
         const date = new Date(r.timeStamp);
-        option.text = `${r.method} | ${r.initiator} | ${date.toISOString()}`;
+        const reqType = r.jwt ? 'JWT' : r.isSamlRequest ? 'SAML Request' : 'SAML Response';
+        option.text = `${reqType} | ${r.method} | ${r.initiator} | ${date.toISOString()}`;
         selectElement.appendChild(option);
     });
 
     selectElement.addEventListener('change', () => {
-        initPopupSelection(authJwt[selectElement.value]);
+        initPopupSelection(auth[selectElement.value]);
     });
-    initPopupSelection(authJwt[0]);
+    initPopupSelection(auth[0]);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -172,12 +280,38 @@ document.addEventListener('DOMContentLoaded', () => {
         chrome.tabs.query({ active: true }, (tabs) => {
             const currentTabId = tabs[0].id;
 
-            if (result.reqDb && result.reqDb[currentTabId] && result.reqDb[currentTabId].authJwt) {
-                initPopup(result.reqDb[currentTabId].authJwt);
+            if (result.reqDb && result.reqDb[currentTabId] && result.reqDb[currentTabId].auth) {
+                initPopup(result.reqDb[currentTabId].auth);
             } else {
                 initPopup([]);
             }
 
+        });
+    });
+});
+
+document.getElementById('clear-storage').addEventListener('click', function () {
+    chrome.storage.local.get(['reqDb'], (result) => {
+        chrome.tabs.query({ active: true }, (tabs) => {
+            const currentTabId = tabs[0].id;
+
+            const newReqDb = result.reqDb ? result.reqDb : {};
+            delete newReqDb[currentTabId];
+            chrome.storage.local.set(
+                { reqDb: newReqDb },
+                () => {
+                    //
+                }
+            );
+
+            chrome.action.setBadgeText({
+                tabId: currentTabId,
+                text: ''
+            }).catch(e => {
+                console.log(e);
+            });
+
+            initPopup([]);
         });
     });
 });

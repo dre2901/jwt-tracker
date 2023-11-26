@@ -10,34 +10,56 @@
 
 <body>
     <h1><img src="32.png" class="jwtTrackerLogo" />JWT Tracker</h1>
-    <div id="go-to-options" class="hint--left" aria-label="Click to go to the options screen">&#9881;</div>
-    <h3 id="notokens">No available JWT information found!</h3>
+    <div id="go-to-options" class="hint--left" aria-label="Edit options">&#9881;</div>
+    <div id="clear-storage" class="hint--left" aria-label="Clear requests for current tab">&#9850;</div>
+    <h3 id="notokens">No available JWT or SAML information found!</h3>
     <div id="tokensmain">
         <div class="tokensmaincontent">
             <div class="subtitle">Last requests (grouped by initiator)</div>
             <select id="availableTokens">
                 <!-- Options will be added here dynamically -->
             </select>
-            <div id="tokennotexpired" class="subtitle">Token is expiring in <span id="expseconds"></span></div>
-            <div id="tokenexpired" class="subtitle">Token has already expired</span></div>
-            <div class="subtitle">Payload</div>
-            <div id="payloadControlPanel">
-                <button id="btnExpandAll" class="hint--right" aria-label="Expand all">&#9662;</button>
-                <button id="btnCollapseAll" class="hint--right" aria-label="Collapse all">&#9656;</button>
-                <span class="hint--right" aria-label="Use regex to filter particular elements in path (not for values)">
-                    <input id="filterPayload" type="text" placeholder="Filter path" />
-                </span>
-                <span class="hint--bottom" aria-label="Search for values in the payload (for example, '.com')">
-                    <input id="searchPayload" type="text" placeholder="Search value" />
-                </span>
-                <button id="btnCopyDecoded" class="hint--bottom" aria-label="Copy decoded token to the clipboard">Copy
-                    decoded</button>
-                <button id="btnCopyEncoded" class="hint--left" aria-label="Copy encoded token to the clipboard">Copy
-                    encoded</button>
+            <div id="jwtcontent">
+                <div id="tokennotexpired" class="subtitle">Token is expiring in <span id="expseconds"></span></div>
+                <div id="tokenexpired" class="subtitle">Token has already expired</span></div>
+                <div class="subtitle">Payload</div>
+                <div id="payloadControlPanel">
+                    <button id="btnExpandAll" class="hint--right" aria-label="Expand all">&#9662;</button>
+                    <button id="btnCollapseAll" class="hint--right" aria-label="Collapse all">&#9656;</button>
+                    <span class="hint--right"
+                        aria-label="Use regex to filter particular elements in path (not for values)">
+                        <input id="filterPayload" type="text" placeholder="Filter path" />
+                    </span>
+                    <span class="hint--bottom" aria-label="Search for values in the payload (for example, '.com')">
+                        <input id="searchPayload" type="text" placeholder="Search value" />
+                    </span>
+                    <button id="btnCopyDecoded" class="hint--bottom"
+                        aria-label="Copy decoded token to the clipboard">Copy
+                        decoded</button>
+                    <button id="btnCopyEncoded" class="hint--left" aria-label="Copy encoded token to the clipboard">Copy
+                        encoded</button>
+                </div>
+                <json-viewer id="jwtPayload"></json-viewer>
+                <div class="subtitle">Header</div>
+                <json-viewer id="jwtHeader"></json-viewer>
             </div>
-            <json-viewer id="jwtPayload"></json-viewer>
-            <div class="subtitle">Header</div>
-            <json-viewer id="jwtHeader"></json-viewer>
+            <div id="samlcontent">
+                <div id="samlControlPanel">
+                    <button id="btnSamlExpandAll" class="hint--right" aria-label="Expand all">&#9662;</button>
+                    <button id="btnSamlCollapseAll" class="hint--right" aria-label="Collapse all">&#9656;</button>
+                    <span class="hint--right"
+                        aria-label="Use regex to filter particular elements in path (not for values)">
+                        <input id="filterSamlPayload" type="text" placeholder="Filter path" />
+                    </span>
+                    <span class="hint--bottom" aria-label="Search for values in the payload (for example, '.com')">
+                        <input id="searchSamlPayload" type="text" placeholder="Search value" />
+                    </span>
+                    <button id="btnCopySaml" class="hint--bottom" aria-label="Copy Saml to the clipboard">Copy
+                        SAML</button>
+                </div>
+                <json-viewer id="samlPayload"></json-viewer>
+                <div id="saml"></div>
+            </div>
         </div>
     </div>
 

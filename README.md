@@ -1,7 +1,7 @@
 # JWT Tracker
-Chrome extension to track and show JWT
+Chrome extension to track and show JWT and SAML data intercepted from web requests.
 
-This extensions tracks any request with `Authorization: Bearer` header and stores them temporarly in your Chrome's local storage. 
+This extensions tracks any request with `Authorization: Bearer` header, `SAMLRequest` and `SAMLResponse` form body and stores them temporarly in your Chrome's local storage. 
 In options you can specify how many requests from different `initiator`s can be stored (default is `10`) per each tab in Chrome browser.
 
 In the popup, you have the option to either filter tokens based on their element paths or search for specific values.
