@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setOptions(result);
 
         // Get current tab and init popup with it's data
-        chrome.tabs.query({ active: true }, (tabs) => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             const currentTabId = tabs[0].id;
 
             if (result.reqDb && result.reqDb[currentTabId] && result.reqDb[currentTabId].auth) {
@@ -292,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.getElementById('clear-storage').addEventListener('click', function () {
     chrome.storage.local.get(['reqDb'], (result) => {
-        chrome.tabs.query({ active: true }, (tabs) => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             const currentTabId = tabs[0].id;
 
             const newReqDb = result.reqDb ? result.reqDb : {};
