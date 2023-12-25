@@ -1,18 +1,31 @@
 let _maxHistoryEntries = 10;
 
-chrome.webRequest.onBeforeSendHeaders.addListener(
-    (details) => {
-        if (details.requestHeaders) {
-            const authHeader = details.requestHeaders.find(h =>
-                (h.name.toLowerCase() === 'authorization') && h.value.toLowerCase().startsWith('bearer'));
+try {
+    // Load only in Chrome
+    if (typeof importScripts === 'function') {
+        importScripts('browser-polyfill.js');
+    }
+} catch (e) {
+    console.error(e);
+}
 
-            // console.log(`authorization header found for initiator ${details.initiator} on tab ${details.tabId} has been detected: ${authHeader.value}`);
-            chrome.storage.local.get(['reqDb'], ({ reqDb }) => {
+browser.webRequest.onBeforeSendHeaders.addListener(
+    async (details) => {
+        if (details.requestHeaders) {
+            try {
+                const authHeader = details.requestHeaders.find(h =>
+                    (h.name.toLowerCase() === 'authorization') && h.value.toLowerCase().startsWith('bearer'));
+
+                // console.log(`authorization header found for initiator ${details.initiator} on tab ${details.tabId} has been detected: ${authHeader.value}`);
+                const { reqDb } = await browser.storage.local.get('reqDb');
                 const newReqDb = reqDb ? reqDb : {};
                 if (!newReqDb[details.tabId] || !newReqDb[details.tabId].auth) {
                     newReqDb[details.tabId] = { auth: [] };
                 }
                 if (authHeader) {
+                    if (!details.initiator) {
+                        details.initiator = details.originUrl ?? details.documentUrl
+                    }
                     // Delete requests in Db with the same initiator
                     newReqDb[details.tabId].auth = newReqDb[details.tabId].auth.filter(a => a.initiator !== details.initiator);
                     // Delete requests from Db is we have more than allowed in options
@@ -25,36 +38,31 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
                         ...details,
                         jwt: authHeader.value.substring(7)
                     });
-                    chrome.storage.local.set(
-                        { reqDb: newReqDb },
-                        () => {
-                            //
-                        }
-                    );
+                    await browser.storage.local.set({ reqDb: newReqDb });
                 }
 
                 const reqNum = newReqDb[details.tabId].auth.length;
                 if (details.tabId > 0) {
-                    chrome.action.setBadgeText({
+                    await browser.action.setBadgeText({
                         tabId: details.tabId,
                         text: `${reqNum > 0 ? reqNum : ''}`
-                    }).catch(e => {
-                        console.log(e);
                     });
                 }
-            });
+            } catch (error) {
+                console.error(error);
+            }
         }
     },
-    { urls: ['*://*:*/*'] },
+    { urls: ['<all_urls>'] },
     ['requestHeaders']
 );
 
-chrome.webRequest.onBeforeRequest.addListener(
-    (details) => {
+browser.webRequest.onBeforeRequest.addListener(
+    async (details) => {
         if (details.requestBody && details.requestBody.formData && details.method === 'POST') {
-
-            const saml = details.requestBody.formData.SAMLRequest || details.requestBody.formData.SAMLResponse;
-            chrome.storage.local.get(['reqDb'], ({ reqDb }) => {
+            try {
+                const saml = details.requestBody.formData.SAMLRequest || details.requestBody.formData.SAMLResponse;
+                const { reqDb } = await browser.storage.local.get('reqDb');
                 const newReqDb = reqDb ? reqDb : {};
                 if (!newReqDb[details.tabId]) {
                     newReqDb[details.tabId] = { auth: [] };
@@ -71,59 +79,44 @@ chrome.webRequest.onBeforeRequest.addListener(
                         saml,
                         isSamlRequest: !!details.requestBody.formData.SAMLRequest
                     });
-                    chrome.storage.local.set(
-                        { reqDb: newReqDb },
-                        () => {
-                            //
-                        }
-                    );
+                    await browser.storage.local.set({ reqDb: newReqDb });
                 }
 
                 const reqNum = newReqDb[details.tabId].auth.length;
                 if (details.tabId > 0) {
-                    chrome.action.setBadgeText({
+                    await browser.action.setBadgeText({
                         tabId: details.tabId,
                         text: `${reqNum > 0 ? reqNum : ''}`
-                    }).catch(e => {
-                        console.log(e);
                     });
                 }
-            });
+            } catch (error) {
+                console.error(error);
+            }
         }
     },
-    { urls: ['*://*:*/*'] },
+    { urls: ['<all_urls>'] },
     ['requestBody']
 );
 
-
-
-chrome.tabs.onRemoved.addListener((tabId) => {
+browser.tabs.onRemoved.addListener(async (tabId) => {
     // Perform clean up of storage on tab closed
     console.log(`Clean up of storage for closed tab ${tabId}`);
-    chrome.storage.local.get(['reqDb'], ({ reqDb }) => {
-        const newReqDb = reqDb ? reqDb : {};
-        delete newReqDb[tabId];
-        chrome.storage.local.set(
-            { reqDb: newReqDb },
-            () => {
-                //
-            }
-        );
-    });
+    const { reqDb } = await browser.storage.local.get('reqDb');
+    const newReqDb = reqDb ? reqDb : {};
+    delete newReqDb[tabId];
+    await browser.storage.local.set({ reqDb: newReqDb });
 });
 
-chrome.runtime.onInstalled.addListener((details) => {
+browser.runtime.onInstalled.addListener(async (details) => {
     if (details.reason !== "install" && details.reason !== "update") return;
-    chrome.storage.local.get(['maxHistoryEntries'], ({ maxHistoryEntries }) => {
-        _maxHistoryEntries = maxHistoryEntries;
-    });
+    const { maxHistoryEntries } = await browser.storage.local.get('maxHistoryEntries');
+    _maxHistoryEntries = maxHistoryEntries;
 });
 
 
-chrome.storage.onChanged.addListener((changes) => {
-    chrome.storage.local.get(['maxHistoryEntries'], ({ maxHistoryEntries }) => {
-        _maxHistoryEntries = maxHistoryEntries;
-    });
+browser.storage.onChanged.addListener(async (changes) => {
+    const { maxHistoryEntries } = await browser.storage.local.get('maxHistoryEntries');
+    _maxHistoryEntries = maxHistoryEntries;
 });
 
 

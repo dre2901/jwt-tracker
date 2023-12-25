@@ -12,9 +12,21 @@
         <label for="max-history-entries">Max History Entries:</label>
         <input type="number" id="max-history-entries" min="1" step="1">
     </div>
+    <div class="option">
+        <label for="permission-list-container">Allowed sites as match patterns (for example:
+            <span>*://developer.mozilla.org/*</span>) or
+            <span>&lt;all_urls&gt;</span>:</label>
+        <div id="permission-list-container">
+        </div>
+        <button class="button" id="add-new-permission">Add new site</button>
+    </div>
     <div id="status"></div>
-    <button id="save">Save</button>
 
+    <div class="footer">
+        <button class="button" id="save">Save</button>
+    </div>
+
+    <script src="../browser-polyfill.js"></script>
     <script src="options.js"></script>
 </body>
 

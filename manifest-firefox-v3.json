@@ -5,13 +5,14 @@
     "version": "1.2",
     "author": "dre2901@gmail.com",
     "homepage_url": "https://github.com/dre2901/jwt-tracker",
-    "options_page": "options/options.html",
     "options_ui": {
         "page": "options/options.html",
         "open_in_tab": false
     },
     "background": {
-        "service_worker": "service-worker.js"
+        "scripts": [
+            "service-worker.js"
+        ]
     },
     "incognito": "spanning",
     "icons": {
@@ -38,9 +39,6 @@
         "activeTab"
     ],
     "host_permissions": [
-        "http://example.com/*"
-    ],
-    "optional_host_permissions": [
         "<all_urls>"
     ]
 }

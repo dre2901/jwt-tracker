@@ -1,5 +1,71 @@
-document.getElementById('go-to-options').addEventListener('click', function () {
-    chrome.runtime.openOptionsPage();
+document.getElementById('go-to-options').addEventListener('click', async () => {
+    await browser.runtime.openOptionsPage();
+});
+
+let currentSitePermission = '';
+
+const maskSubdomains = (hostname) => {
+    // Split the hostname into its parts by dots
+    const parts = hostname.split('.');
+
+    // If there are more than two parts (main host + subdomains), mask the subdomains
+    if (parts.length > 2) {
+        // Replace all subdomain parts with asterisks
+        for (let i = 0; i < parts.length - 2; i++) {
+            parts[i] = '*';
+        }
+    }
+
+    // Join the parts back together with dots to form the masked hostname
+    return parts.join('.');
+}
+
+const initTopButtons = async () => {
+    const { origins } = await browser.permissions.getAll();
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+    const url = new URL(tabs[0].url);
+
+    currentSitePermission = `${url.protocol}//${maskSubdomains(url.host)}/*`;
+
+    const hasPermission = await browser.permissions.contains({
+        origins: [currentSitePermission]
+    });
+    const msgNoPermissions = document.getElementById('nopermissions');
+    msgNoPermissions.style.display = hasPermission ? 'none' : 'block';
+
+    const btnPermissionsAll = document.getElementById('request-permissions-all');
+    const btnPermissionsCurrent = document.getElementById('request-permissions-current');
+    btnPermissionsCurrent.setAttribute('aria-label', `Grant access to '${currentSitePermission}'`);
+    if (origins.includes('<all_urls>')) {
+        btnPermissionsAll.style.display = 'none';
+        btnPermissionsCurrent.style.display = 'none';
+    } else if (origins.includes(currentSitePermission)) {
+        btnPermissionsAll.style.display = 'block';
+        btnPermissionsCurrent.style.display = 'none';
+    } else {
+        btnPermissionsAll.style.display = 'block';
+        btnPermissionsCurrent.style.display = 'block';
+    }
+};
+
+document.getElementById('request-permissions-current').addEventListener('click', async () => {
+    // IMPORTANT: request permissions to be called in onclick handler before any other promise-based requests to avoid 
+    // "Error: permissions.request may only be called from a user input handler" in Firefox !!!
+    if (await browser.permissions.request({ origins: [currentSitePermission] })) {
+        const currentPermissions = await browser.permissions.getAll();
+
+        console.log(JSON.stringify(currentPermissions.origins));
+    }
+});
+
+document.getElementById('request-permissions-all').addEventListener('click', async () => {
+    // IMPORTANT: request permissions to be called in onclick handler before any other promise-based requests to avoid 
+    // "Error: permissions.request may only be called from a user input handler" in Firefox !!!
+    if (await browser.permissions.request({ origins: ["<all_urls>"] })) {
+        const currentPermissions = await browser.permissions.getAll();
+
+        console.log(JSON.stringify(currentPermissions.origins));
+    }
 });
 
 let options = {};
@@ -271,49 +337,49 @@ const initPopup = (auth) => {
     initPopupSelection(auth[0]);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Load the max history entries and reqDb from Chrome storage
-    chrome.storage.local.get(['maxHistoryEntries', 'reqDb'], (result) => {
-        setOptions(result);
+document.addEventListener('DOMContentLoaded', async () => {
+    // Load the max history entries and reqDb from local storage
+    try {
+        await initTopButtons();
+
+        const { reqDb } = await browser.storage.local.get('reqDb');
+        const { maxHistoryEntries } = await browser.storage.local.get('maxHistoryEntries');
+
+        setOptions({ reqDb, maxHistoryEntries });
 
         // Get current tab and init popup with it's data
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            const currentTabId = tabs[0].id;
+        const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+        const currentTabId = tabs[0].id;
 
-            if (result.reqDb && result.reqDb[currentTabId] && result.reqDb[currentTabId].auth) {
-                initPopup(result.reqDb[currentTabId].auth);
-            } else {
-                initPopup([]);
-            }
-
-        });
-    });
+        if (reqDb && reqDb[currentTabId] && reqDb[currentTabId].auth) {
+            initPopup(reqDb[currentTabId].auth);
+        } else {
+            initPopup([]);
+        }
+    } catch (error) {
+        console.error(error);
+    }
 });
 
-document.getElementById('clear-storage').addEventListener('click', function () {
-    chrome.storage.local.get(['reqDb'], (result) => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            const currentTabId = tabs[0].id;
+document.getElementById('clear-storage').addEventListener('click', async () => {
+    try {
+        const { reqDb } = await browser.storage.local.get('reqDb');
+        const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+        const currentTabId = tabs[0].id;
 
-            const newReqDb = result.reqDb ? result.reqDb : {};
-            delete newReqDb[currentTabId];
-            chrome.storage.local.set(
-                { reqDb: newReqDb },
-                () => {
-                    //
-                }
-            );
+        const newReqDb = reqDb ?? {};
+        delete newReqDb[currentTabId];
+        await browser.storage.local.set({ reqDb: newReqDb });
 
-            chrome.action.setBadgeText({
-                tabId: currentTabId,
-                text: ''
-            }).catch(e => {
-                console.log(e);
-            });
-
-            initPopup([]);
+        await browser.action.setBadgeText({
+            tabId: currentTabId,
+            text: ''
         });
-    });
+
+        initPopup([]);
+    } catch (error) {
+        console.error(error);
+    }
 });
 
 

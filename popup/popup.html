@@ -5,13 +5,19 @@
 <head>
     <link rel="stylesheet" type="text/css" href="hint.min.css">
     <link rel="stylesheet" type="text/css" href="popup.css">
+    <script src="../browser-polyfill.js"></script>
     <script src="json-viewer.bundle.js"></script>
 </head>
 
 <body>
     <h1><img src="32.png" class="jwtTrackerLogo" />JWT Tracker</h1>
-    <div id="go-to-options" class="hint--left" aria-label="Edit options">&#9881;</div>
-    <div id="clear-storage" class="hint--left" aria-label="Clear requests for current tab">&#9850;</div>
+    <div class="topButtons">
+        <div id="request-permissions-current" class="hint--left" aria-label="Grant access to current website"></div>
+        <div id="request-permissions-all" class="hint--left" aria-label="Grant access to all websites"></div>
+        <div id="clear-storage" class="hint--left" aria-label="Clear requests for current tab"></div>
+        <div id="go-to-options" class="hint--left" aria-label="Edit options"></div>
+    </div>
+    <h3 id="nopermissions">Extension has no permission for current website!</h3>
     <h3 id="notokens">No available JWT or SAML information found!</h3>
     <div id="tokensmain">
         <div class="tokensmaincontent">
