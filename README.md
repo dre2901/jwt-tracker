@@ -11,6 +11,9 @@ In the popup, you have the option to either filter tokens based on their element
 
 ## Changes
 
+### Version 1.3
+Bug fixes for Firefox
+
 ### Version 1.2
 Support for Firefox was added. Extension does not need extensive host permissions anymore - instead user will be able to specify websites to monitor in options window. Additional `activeTab` permission is needed to get the url of the current tab when extension is opened. 
 

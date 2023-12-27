@@ -9,6 +9,19 @@ try {
     console.error(e);
 }
 
+const setBadgeText = async (tabId, text) => {
+    try {
+        // Check if it's Manifest v3
+        if (browser.action) {
+            await browser.action.setBadgeText({ tabId, text });
+        } else {
+            await browser.browserAction.setBadgeText({ tabId, text });
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 browser.webRequest.onBeforeSendHeaders.addListener(
     async (details) => {
         if (details.requestHeaders) {
@@ -23,8 +36,14 @@ browser.webRequest.onBeforeSendHeaders.addListener(
                     newReqDb[details.tabId] = { auth: [] };
                 }
                 if (authHeader) {
+                    // Firefox does not provide initiator - let's replace it with something else
                     if (!details.initiator) {
                         details.initiator = details.originUrl ?? details.documentUrl
+                        try {
+                            const url = new URL(details.initiator);
+                            details.initiator = `${url.protocol}//${url.host}`;
+                        } catch { }
+
                     }
                     // Delete requests in Db with the same initiator
                     newReqDb[details.tabId].auth = newReqDb[details.tabId].auth.filter(a => a.initiator !== details.initiator);
@@ -43,10 +62,7 @@ browser.webRequest.onBeforeSendHeaders.addListener(
 
                 const reqNum = newReqDb[details.tabId].auth.length;
                 if (details.tabId > 0) {
-                    await browser.action.setBadgeText({
-                        tabId: details.tabId,
-                        text: `${reqNum > 0 ? reqNum : ''}`
-                    });
+                    await setBadgeText(details.tabId, `${reqNum > 0 ? reqNum : ''}`);
                 }
             } catch (error) {
                 console.error(error);
@@ -73,6 +89,11 @@ browser.webRequest.onBeforeRequest.addListener(
                         newReqDb[details.tabId].auth.splice(0, newReqDb[details.tabId].auth.length - (_maxHistoryEntries - 1));
                     }
 
+                    // Firefox does not provide initiator - let's replace it with something else
+                    if (!details.initiator) {
+                        details.initiator = details.url ?? details.originUrl ?? details.documentUrl
+                    }
+
                     // Add new request to the end of array and set new reqDb
                     newReqDb[details.tabId].auth.push({
                         ...details,
@@ -84,10 +105,7 @@ browser.webRequest.onBeforeRequest.addListener(
 
                 const reqNum = newReqDb[details.tabId].auth.length;
                 if (details.tabId > 0) {
-                    await browser.action.setBadgeText({
-                        tabId: details.tabId,
-                        text: `${reqNum > 0 ? reqNum : ''}`
-                    });
+                    await setBadgeText(details.tabId, `${reqNum > 0 ? reqNum : ''}`);
                 }
             } catch (error) {
                 console.error(error);

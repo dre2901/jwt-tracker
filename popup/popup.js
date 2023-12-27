@@ -8,16 +8,26 @@ const maskSubdomains = (hostname) => {
     // Split the hostname into its parts by dots
     const parts = hostname.split('.');
 
-    // If there are more than two parts (main host + subdomains), mask the subdomains
+    // If there are more than two parts (main host + subdomains), mask the subdomains with one *
     if (parts.length > 2) {
-        // Replace all subdomain parts with asterisks
-        for (let i = 0; i < parts.length - 2; i++) {
-            parts[i] = '*';
-        }
+        return `*.${parts[parts.length - 2]}.${parts[parts.length - 1]}`;
     }
 
     // Join the parts back together with dots to form the masked hostname
     return parts.join('.');
+}
+
+const setBadgeText = async (tabId, text) => {
+    try {
+        // Check if it's Manifest v3
+        if (browser.action) {
+            await browser.action.setBadgeText({ tabId, text });
+        } else {
+            await browser.browserAction.setBadgeText({ tabId, text });
+        }
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 const initTopButtons = async () => {
@@ -371,10 +381,7 @@ document.getElementById('clear-storage').addEventListener('click', async () => {
         delete newReqDb[currentTabId];
         await browser.storage.local.set({ reqDb: newReqDb });
 
-        await browser.action.setBadgeText({
-            tabId: currentTabId,
-            text: ''
-        });
+        await setBadgeText(currentTabId, '');
 
         initPopup([]);
     } catch (error) {
